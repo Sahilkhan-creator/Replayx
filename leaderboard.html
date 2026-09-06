@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard — ReplayX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0E14;
+  --panel: #131824;
+  --panel2: #182036;
+  --border: #232B3D;
+  --text: #E8ECF1;
+  --dim: #8892A6;
+  --long: #00D9A3;
+  --short: #FF5C7A;
+  --gold: #F5C542;
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+}
+
+a { color: inherit; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #0D121B, #0A0E14);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brand .mark {
+  width: 10px; height: 10px;
+  background: var(--long);
+  border-radius: 2px;
+  display: inline-block;
+  box-shadow: 0 0 12px rgba(0,217,163,0.6);
+}
+
+.brand-name {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+.brand-tag {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+nav.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+nav.tabs a {
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--dim);
+}
+
+nav.tabs a.active {
+  background: var(--panel2);
+  color: var(--text);
+}
+
+nav.tabs a:hover { color: var(--text); }
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.btn:hover { border-color: #35405A; }
+
+.btn-long {
+  background: rgba(0,217,163,0.12);
+  border-color: rgba(0,217,163,0.4);
+  color: var(--long);
+}
+.btn-long:hover { background: rgba(0,217,163,0.22); }
+
+.btn-short {
+  background: rgba(255,92,122,0.12);
+  border-color: rgba(255,92,122,0.4);
+  color: var(--short);
+}
+.btn-short:hover { background: rgba(255,92,122,0.22); }
+
+.btn-wait {
+  background: rgba(136,146,166,0.1);
+  color: var(--dim);
+}
+
+.btn-primary {
+  background: var(--long);
+  color: #04140F;
+  border: none;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+input, select {
+  font-family: var(--font-ui);
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-size: 14px;
+}
+
+label {
+  font-size: 13px;
+  color: var(--dim);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.mono { font-family: var(--font-mono); }
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 2px;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+</style>
+<style>
+  .lb-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .lb-title { font-size: 22px; font-weight: 700; }
+  .lb-sub { font-size: 13px; color: var(--dim); margin-top: 4px; }
+
+  .sort-tabs { display: flex; gap: 4px; background: var(--panel2); padding: 4px; border-radius: 8px; border: 1px solid var(--border); }
+  .sort-tabs button {
+    background: none; border: none; color: var(--dim); font-family: var(--font-ui);
+    font-size: 13px; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+  }
+  .sort-tabs button.active { background: var(--panel); color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 12px; color: var(--dim); padding: 10px 14px; border-bottom: 1px solid var(--border); font-weight: 500; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  tr:last-child td { border-bottom: none; }
+  tr.you { background: rgba(0,217,163,0.06); }
+
+  .rank { font-family: var(--font-mono); color: var(--dim); width: 36px; }
+  .rank.top1 { color: var(--gold); }
+  .rank.top2 { color: #C9D2E0; }
+  .rank.top3 { color: #C98A4D; }
+
+  .name { font-weight: 600; }
+  .name.you::after { content: ' (you)'; color: var(--long); font-weight: 500; font-size: 12px; }
+
+  .num { font-family: var(--font-mono); text-align: right; }
+
+  .challenge-panel {
+    padding: 20px;
+    margin-top: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .challenge-title { font-weight: 700; margin-bottom: 4px; }
+  .challenge-desc { font-size: 13px; color: var(--dim); }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="brand">
+    <span class="mark"></span>
+    <span class="brand-name">REPLAYX</span>
+    <span class="brand-tag">Trade the past. Master the future.</span>
+  </a>
+  <nav class="tabs">
+    <a href="index.html">Replay</a>
+    <a href="leaderboard.html" class="active">Leaderboard</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="settings.html">Settings</a>
+  </nav>
+</div>
+
+<div class="page">
+
+  <div class="challenge-panel panel">
+    <div>
+      <div class="challenge-title">Weekly challenge — Volatility Week</div>
+      <div class="challenge-desc">Play 10 rounds on BTC and ETH before Sunday. Top 20 win rates earn a badge.</div>
+    </div>
+    <button class="btn btn-primary" onclick="location.href='index.html'">Join challenge</button>
+  </div>
+
+  <div class="panel" style="padding: 20px; margin-top: 18px;">
+    <div class="lb-head">
+      <div>
+        <div class="lb-title">Leaderboard</div>
+        <div class="lb-sub">Rankings update as you play. All data stored on this device for this demo.</div>
+      </div>
+      <div class="sort-tabs">
+        <button data-sort="winRate" class="active">Win rate</button>
+        <button data-sort="rr">Risk/reward</button>
+        <button data-sort="streak">Streak</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Trader</th>
+          <th style="text-align:right;">Win rate</th>
+          <th style="text-align:right;">Avg R:R</th>
+          <th style="text-align:right;">Best streak</th>
+        </tr>
+      </thead>
+      <tbody id="lbBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+/* ReplayX core — candle generation + local persistence (no backend, no real market data) */
+
+const ReplayX = (() => {
+
+  // ---------- seeded RNG so a "session id" always reproduces the same chart ----------
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function hashStr(s) {
+    let h = 1779033703 ^ s.length;
+    for (let i = 0; i < s.length; i++) {
+      h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return () => {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      return (h ^= h >>> 16) >>> 0;
+    };
+  }
+
+  // Generates a pseudo-realistic OHLCV series with regime shifts (trend/chop/volatility clusters)
+  function generateSeries(seedString, count = 220, basePrice = 100) {
+    const seedFn = hashStr(seedString);
+    const rand = mulberry32(seedFn());
+
+    const candles = [];
+    let price = basePrice;
+    let trend = (rand() - 0.5) * 0.002;
+    let vol = 0.006 + rand() * 0.01;
+    let t = Date.now() - count * 60 * 60 * 1000;
+
+    for (let i = 0; i < count; i++) {
+      // occasionally shift regime: trend direction/strength and volatility
+      if (rand() < 0.04) trend = (rand() - 0.5) * 0.006;
+      if (rand() < 0.03) vol = 0.004 + rand() * 0.018;
+
+      const open = price;
+      const drift = trend * open;
+      const shock = (rand() - 0.5) * vol * open * 2;
+      const close = Math.max(0.01, open + drift + shock);
+
+      const wickUp = Math.abs((rand()) * vol * open * 1.2);
+      const wickDown = Math.abs((rand()) * vol * open * 1.2);
+      const high = Math.max(open, close) + wickUp;
+      const low = Math.max(0.01, Math.min(open, close) - wickDown);
+      const volume = Math.round(500 + rand() * 4500);
+
+      candles.push({ t, open, high, low, close, volume });
+      price = close;
+      t += 60 * 60 * 1000; // hourly candles
+    }
+    return candles;
+  }
+
+  const ASSETS = [
+    { id: 'BTC', name: 'BTC / USD', base: 61000, tag: 'Crypto' },
+    { id: 'ETH', name: 'ETH / USD', base: 3400, tag: 'Crypto' },
+    { id: 'SOL', name: 'SOL / USD', base: 145, tag: 'Crypto' },
+    { id: 'AAPL', name: 'AAPL', base: 210, tag: 'Stock' },
+    { id: 'TSLA', name: 'TSLA', base: 245, tag: 'Stock' },
+    { id: 'NIFTY', name: 'NIFTY 50', base: 24800, tag: 'Index' },
+  ];
+
+  // ---------- local persistence ----------
+  const LS_KEY = 'replayx_state_v1';
+
+  function defaultState() {
+    return {
+      plan: 'free', // 'free' | 'pro'
+      stats: { rounds: 0, correct: 0, streak: 0, bestStreak: 0, history: [] },
+      leaderboard: seedLeaderboard(),
+      settings: { sound: true, timeframe: '1H', defaultAsset: 'BTC' },
+    };
+  }
+
+  function seedLeaderboard() {
+    const names = ['nightowl_fx', 'chartgoblin', 'delta.hunter', 'pipsqueak', 'zerodha_zen',
+                   'candlecrusher', 'wick_whisperer', 'rrmaster', 'sohum_trades', 'quietbull'];
+    const seedRand = mulberry32(42);
+    return names.map((n) => ({
+      name: n,
+      winRate: Math.round((55 + seedRand() * 38) * 10) / 10,
+      streak: Math.floor(3 + seedRand() * 22),
+      rr: Math.round((1.1 + seedRand() * 2.4) * 100) / 100,
+    })).sort((a, b) => b.winRate - a.winRate);
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) { const s = defaultState(); saveState(s); return s; }
+      const parsed = JSON.parse(raw);
+      return { ...defaultState(), ...parsed, stats: { ...defaultState().stats, ...(parsed.stats || {}) } };
+    } catch (e) {
+      const s = defaultState();
+      saveState(s);
+      return s;
+    }
+  }
+
+  function saveState(state) {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+
+  function recordRound(correct, rr) {
+    const state = loadState();
+    state.stats.rounds += 1;
+    if (correct) {
+      state.stats.correct += 1;
+      state.stats.streak += 1;
+      state.stats.bestStreak = Math.max(state.stats.bestStreak, state.stats.streak);
+    } else {
+      state.stats.streak = 0;
+    }
+    state.stats.history.unshift({ correct, rr, ts: Date.now() });
+    state.stats.history = state.stats.history.slice(0, 100);
+    saveState(state);
+    return state.stats;
+  }
+
+  function resetStats() {
+    const state = loadState();
+    state.stats = defaultState().stats;
+    saveState(state);
+    return state.stats;
+  }
+
+  function setPlan(plan) {
+    const state = loadState();
+    state.plan = plan;
+    saveState(state);
+    return state;
+  }
+
+  function setSettings(patch) {
+    const state = loadState();
+    state.settings = { ...state.settings, ...patch };
+    saveState(state);
+    return state.settings;
+  }
+
+  return {
+    generateSeries, ASSETS, loadState, saveState, recordRound, resetStats, setPlan, setSettings, mulberry32, hashStr,
+  };
+})();
+
+</script>
+<script>
+const state = ReplayX.loadState();
+const s = state.stats;
+const rrVals = s.history.filter(h => h.rr).map(h => h.rr);
+const you = {
+  name: 'you',
+  winRate: s.rounds ? Math.round((s.correct / s.rounds) * 1000) / 10 : 0,
+  rr: rrVals.length ? Math.round((rrVals.reduce((a,b)=>a+b,0)/rrVals.length) * 100) / 100 : 0,
+  streak: s.bestStreak,
+  isYou: true,
+};
+
+let currentSort = 'winRate';
+
+function renderTable() {
+  const rows = [...state.leaderboard, you].sort((a, b) => b[currentSort] - a[currentSort]);
+  const body = document.getElementById('lbBody');
+  body.innerHTML = '';
+  rows.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    if (r.isYou) tr.className = 'you';
+    const rankClass = i === 0 ? 'top1' : i === 1 ? 'top2' : i === 2 ? 'top3' : '';
+    tr.innerHTML = `
+      <td class="rank ${rankClass}">${i + 1}</td>
+      <td class="name ${r.isYou ? 'you' : ''}">${r.name}</td>
+      <td class="num">${r.winRate.toFixed(1)}%</td>
+      <td class="num">${r.rr.toFixed(2)}</td>
+      <td class="num">${r.streak}</td>
+    `;
+    body.appendChild(tr);
+  });
+}
+
+document.querySelectorAll('.sort-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.sort-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSort = btn.dataset.sort;
+    renderTable();
+  };
+});
+
+renderTable();
+</script>
+</body>
+</html>

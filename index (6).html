@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReplayX — Train before you trade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0E14;
+  --panel: #131824;
+  --panel2: #182036;
+  --border: #232B3D;
+  --text: #E8ECF1;
+  --dim: #8892A6;
+  --long: #00D9A3;
+  --short: #FF5C7A;
+  --gold: #F5C542;
+  --font-ui: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+}
+
+a { color: inherit; }
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(180deg, #0D121B, #0A0E14);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.brand .mark {
+  width: 10px; height: 10px;
+  background: var(--long);
+  border-radius: 2px;
+  display: inline-block;
+  box-shadow: 0 0 12px rgba(0,217,163,0.6);
+}
+
+.brand-name {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+.brand-tag {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+nav.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+nav.tabs a {
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--dim);
+}
+
+nav.tabs a.active {
+  background: var(--panel2);
+  color: var(--text);
+}
+
+nav.tabs a:hover { color: var(--text); }
+
+.page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.btn {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--panel2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.btn:hover { border-color: #35405A; }
+
+.btn-long {
+  background: rgba(0,217,163,0.12);
+  border-color: rgba(0,217,163,0.4);
+  color: var(--long);
+}
+.btn-long:hover { background: rgba(0,217,163,0.22); }
+
+.btn-short {
+  background: rgba(255,92,122,0.12);
+  border-color: rgba(255,92,122,0.4);
+  color: var(--short);
+}
+.btn-short:hover { background: rgba(255,92,122,0.22); }
+
+.btn-wait {
+  background: rgba(136,146,166,0.1);
+  color: var(--dim);
+}
+
+.btn-primary {
+  background: var(--long);
+  color: #04140F;
+  border: none;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+input, select {
+  font-family: var(--font-ui);
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 7px;
+  font-size: 14px;
+}
+
+label {
+  font-size: 13px;
+  color: var(--dim);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.mono { font-family: var(--font-mono); }
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 2px;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+</style>
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 18px;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .chart-panel { padding: 18px; }
+
+  .chart-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .asset-select { display: flex; align-items: center; gap: 10px; }
+
+  .asset-name { font-weight: 700; font-size: 17px; }
+  .asset-tag {
+    font-size: 11px;
+    color: var(--dim);
+    background: var(--panel2);
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+  }
+
+  .round-badge {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--dim);
+  }
+
+  canvas#chart {
+    width: 100%;
+    height: 420px;
+    display: block;
+    border-radius: 6px;
+    background: #0C1119;
+  }
+
+  .predict-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .predict-row .btn { flex: 1; padding: 14px; font-size: 15px; }
+
+  .reveal-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    align-items: center;
+  }
+
+  .result-banner {
+    margin-top: 14px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: none;
+  }
+  .result-banner.correct { background: rgba(0,217,163,0.1); border: 1px solid rgba(0,217,163,0.35); color: var(--long); }
+  .result-banner.wrong { background: rgba(255,92,122,0.1); border: 1px solid rgba(255,92,122,0.35); color: var(--short); }
+  .result-banner.show { display: block; }
+
+  .side-panel { display: flex; flex-direction: column; gap: 14px; }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .streak-panel {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .flame {
+    font-size: 34px;
+    line-height: 1;
+  }
+  .streak-num {
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--gold);
+  }
+  .streak-label { font-size: 12px; color: var(--dim); }
+
+  .lock-panel {
+    padding: 16px;
+    font-size: 13px;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+  .lock-panel a { color: var(--long); text-decoration: none; font-weight: 600; }
+
+  .share-btn-wrap { padding: 16px; }
+
+  #shareModalOverlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    align-items: center; justify-content: center;
+    z-index: 50;
+  }
+  #shareModalOverlay.show { display: flex; }
+
+  .share-card {
+    width: 420px;
+    border-radius: 16px;
+    padding: 28px;
+    background: radial-gradient(circle at 20% 0%, #16233A, #0A0E14 60%);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .share-card::after {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(0,217,163,0.18), transparent 70%);
+  }
+  .share-brand { font-family: var(--font-mono); font-weight: 700; font-size: 14px; color: var(--dim); position: relative; }
+  .share-headline { font-size: 32px; font-weight: 700; margin: 18px 0 6px; position: relative; }
+  .share-sub { font-size: 14px; color: var(--dim); position: relative; margin-bottom: 22px; }
+  .share-stats { display: flex; gap: 22px; position: relative; }
+  .share-stat-num { font-family: var(--font-mono); font-size: 22px; font-weight: 700; }
+  .share-stat-label { font-size: 11px; color: var(--dim); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; justify-content: center; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="brand">
+    <span class="mark"></span>
+    <span class="brand-name">REPLAYX</span>
+    <span class="brand-tag">Trade the past. Master the future.</span>
+  </a>
+  <nav class="tabs">
+    <a href="index.html" class="active">Replay</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="pricing.html">Pricing</a>
+    <a href="settings.html">Settings</a>
+  </nav>
+</div>
+
+<div class="page">
+  <div class="layout">
+
+    <div class="chart-panel panel">
+      <div class="chart-head">
+        <div class="asset-select">
+          <select id="assetPicker"></select>
+          <span class="asset-tag" id="assetTag">Crypto</span>
+        </div>
+        <div class="round-badge" id="roundBadge">Round 1 · Candle 60 / 200</div>
+      </div>
+
+      <canvas id="chart"></canvas>
+
+      <div class="predict-row" id="predictRow">
+        <button class="btn btn-long" id="btnLong">▲ LONG</button>
+        <button class="btn btn-wait" id="btnWait">— WAIT</button>
+        <button class="btn btn-short" id="btnShort">▼ SHORT</button>
+      </div>
+
+      <div class="reveal-row" id="revealRow" style="display:none;">
+        <button class="btn btn-primary" id="btnReveal">Reveal next 15 candles</button>
+      </div>
+
+      <div class="result-banner" id="resultBanner"></div>
+
+      <div class="reveal-row" id="nextRow" style="display:none;">
+        <button class="btn btn-primary" id="btnNext">Next round →</button>
+        <button class="btn" id="btnShare">Share this run</button>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="streak-panel panel">
+        <div class="flame">🔥</div>
+        <div>
+          <div class="streak-num" id="streakNum">0</div>
+          <div class="streak-label">Current streak</div>
+        </div>
+      </div>
+
+      <div class="stat-grid panel">
+        <div>
+          <div class="stat-value" id="statWinRate">—</div>
+          <div class="stat-label">Win rate</div>
+        </div>
+        <div>
+          <div class="stat-value" id="statRounds">0</div>
+          <div class="stat-label">Rounds played</div>
+        </div>
+        <div>
+          <div class="stat-value" id="statBest">0</div>
+          <div class="stat-label">Best streak</div>
+        </div>
+        <div>
+          <div class="stat-value" id="statRR">—</div>
+          <div class="stat-label">Avg risk/reward</div>
+        </div>
+      </div>
+
+      <div class="lock-panel panel" id="lockPanel"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="shareModalOverlay">
+  <div>
+    <div class="share-card" id="shareCard">
+      <div class="share-brand">REPLAYX</div>
+      <div class="share-headline" id="shareHeadline">87% accuracy</div>
+      <div class="share-sub" id="shareSub">over 12 rounds on BTC / USD</div>
+      <div class="share-stats">
+        <div>
+          <div class="share-stat-num" id="shareStreak">6</div>
+          <div class="share-stat-label">Best streak</div>
+        </div>
+        <div>
+          <div class="share-stat-num" id="shareRR">1.8</div>
+          <div class="share-stat-label">Avg R:R</div>
+        </div>
+        <div>
+          <div class="share-stat-num" id="shareRounds">12</div>
+          <div class="share-stat-label">Rounds</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="btnCloseShare">Close</button>
+      <button class="btn btn-primary" id="btnDownloadShare">Download image</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ReplayX core — candle generation + local persistence (no backend, no real market data) */
+
+const ReplayX = (() => {
+
+  // ---------- seeded RNG so a "session id" always reproduces the same chart ----------
+  function mulberry32(seed) {
+    return function () {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function hashStr(s) {
+    let h = 1779033703 ^ s.length;
+    for (let i = 0; i < s.length; i++) {
+      h = Math.imul(h ^ s.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return () => {
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      return (h ^= h >>> 16) >>> 0;
+    };
+  }
+
+  // Generates a pseudo-realistic OHLCV series with regime shifts (trend/chop/volatility clusters)
+  function generateSeries(seedString, count = 220, basePrice = 100) {
+    const seedFn = hashStr(seedString);
+    const rand = mulberry32(seedFn());
+
+    const candles = [];
+    let price = basePrice;
+    let trend = (rand() - 0.5) * 0.002;
+    let vol = 0.006 + rand() * 0.01;
+    let t = Date.now() - count * 60 * 60 * 1000;
+
+    for (let i = 0; i < count; i++) {
+      // occasionally shift regime: trend direction/strength and volatility
+      if (rand() < 0.04) trend = (rand() - 0.5) * 0.006;
+      if (rand() < 0.03) vol = 0.004 + rand() * 0.018;
+
+      const open = price;
+      const drift = trend * open;
+      const shock = (rand() - 0.5) * vol * open * 2;
+      const close = Math.max(0.01, open + drift + shock);
+
+      const wickUp = Math.abs((rand()) * vol * open * 1.2);
+      const wickDown = Math.abs((rand()) * vol * open * 1.2);
+      const high = Math.max(open, close) + wickUp;
+      const low = Math.max(0.01, Math.min(open, close) - wickDown);
+      const volume = Math.round(500 + rand() * 4500);
+
+      candles.push({ t, open, high, low, close, volume });
+      price = close;
+      t += 60 * 60 * 1000; // hourly candles
+    }
+    return candles;
+  }
+
+  const ASSETS = [
+    { id: 'BTC', name: 'BTC / USD', base: 61000, tag: 'Crypto' },
+    { id: 'ETH', name: 'ETH / USD', base: 3400, tag: 'Crypto' },
+    { id: 'SOL', name: 'SOL / USD', base: 145, tag: 'Crypto' },
+    { id: 'AAPL', name: 'AAPL', base: 210, tag: 'Stock' },
+    { id: 'TSLA', name: 'TSLA', base: 245, tag: 'Stock' },
+    { id: 'NIFTY', name: 'NIFTY 50', base: 24800, tag: 'Index' },
+  ];
+
+  // ---------- local persistence ----------
+  const LS_KEY = 'replayx_state_v1';
+
+  function defaultState() {
+    return {
+      plan: 'free', // 'free' | 'pro'
+      stats: { rounds: 0, correct: 0, streak: 0, bestStreak: 0, history: [] },
+      leaderboard: seedLeaderboard(),
+      settings: { sound: true, timeframe: '1H', defaultAsset: 'BTC' },
+    };
+  }
+
+  function seedLeaderboard() {
+    const names = ['nightowl_fx', 'chartgoblin', 'delta.hunter', 'pipsqueak', 'zerodha_zen',
+                   'candlecrusher', 'wick_whisperer', 'rrmaster', 'sohum_trades', 'quietbull'];
+    const seedRand = mulberry32(42);
+    return names.map((n) => ({
+      name: n,
+      winRate: Math.round((55 + seedRand() * 38) * 10) / 10,
+      streak: Math.floor(3 + seedRand() * 22),
+      rr: Math.round((1.1 + seedRand() * 2.4) * 100) / 100,
+    })).sort((a, b) => b.winRate - a.winRate);
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) { const s = defaultState(); saveState(s); return s; }
+      const parsed = JSON.parse(raw);
+      return { ...defaultState(), ...parsed, stats: { ...defaultState().stats, ...(parsed.stats || {}) } };
+    } catch (e) {
+      const s = defaultState();
+      saveState(s);
+      return s;
+    }
+  }
+
+  function saveState(state) {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+
+  function recordRound(correct, rr) {
+    const state = loadState();
+    state.stats.rounds += 1;
+    if (correct) {
+      state.stats.correct += 1;
+      state.stats.streak += 1;
+      state.stats.bestStreak = Math.max(state.stats.bestStreak, state.stats.streak);
+    } else {
+      state.stats.streak = 0;
+    }
+    state.stats.history.unshift({ correct, rr, ts: Date.now() });
+    state.stats.history = state.stats.history.slice(0, 100);
+    saveState(state);
+    return state.stats;
+  }
+
+  function resetStats() {
+    const state = loadState();
+    state.stats = defaultState().stats;
+    saveState(state);
+    return state.stats;
+  }
+
+  function setPlan(plan) {
+    const state = loadState();
+    state.plan = plan;
+    saveState(state);
+    return state;
+  }
+
+  function setSettings(patch) {
+    const state = loadState();
+    state.settings = { ...state.settings, ...patch };
+    saveState(state);
+    return state.settings;
+  }
+
+  return {
+    generateSeries, ASSETS, loadState, saveState, recordRound, resetStats, setPlan, setSettings, mulberry32, hashStr,
+  };
+})();
+
+</script>
+<script>
+const state = ReplayX.loadState();
+const canvas = document.getElementById('chart');
+const ctx = canvas.getContext('2d');
+
+let session = null; // { asset, series, visibleCount, revealTarget, prediction, resolved, roundNum }
+
+function fitCanvas() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = 420 * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', () => { fitCanvas(); render(); });
+
+function populateAssetPicker() {
+  const sel = document.getElementById('assetPicker');
+  sel.innerHTML = '';
+  ReplayX.ASSETS.forEach((a, i) => {
+    const isLocked = state.plan === 'free' && i >= 3; // free tier: first 3 markets only
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = a.name + (isLocked ? ' 🔒 Pro' : '');
+    opt.disabled = isLocked;
+    sel.appendChild(opt);
+  });
+}
+
+function newSession(assetId, roundNum) {
+  const asset = ReplayX.ASSETS.find(a => a.id === assetId) || ReplayX.ASSETS[0];
+  const seed = asset.id + '-' + Date.now() + '-' + Math.random();
+  const totalCandles = 200;
+  const series = ReplayX.generateSeries(seed, totalCandles, asset.base);
+  const startVisible = 55 + Math.floor(Math.random() * 20);
+
+  session = {
+    asset,
+    series,
+    visibleCount: startVisible,
+    revealTarget: Math.min(startVisible + 15, totalCandles),
+    prediction: null,
+    resolved: false,
+    roundNum: roundNum || 1,
+  };
+
+  document.getElementById('assetTag').textContent = asset.tag;
+  document.getElementById('predictRow').style.display = 'flex';
+  document.getElementById('revealRow').style.display = 'none';
+  document.getElementById('nextRow').style.display = 'none';
+  document.getElementById('resultBanner').className = 'result-banner';
+  document.getElementById('resultBanner').textContent = '';
+  updateRoundBadge();
+  render();
+}
+
+function updateRoundBadge() {
+  document.getElementById('roundBadge').textContent =
+    `Round ${session.roundNum} · Candle ${session.visibleCount} / ${session.series.length}`;
+}
+
+function render() {
+  if (!session) return;
+  const w = canvas.getBoundingClientRect().width;
+  const h = 420;
+  ctx.clearRect(0, 0, w, h);
+
+  const visible = session.series.slice(0, session.visibleCount);
+  const lo = Math.min(...visible.map(c => c.low));
+  const hi = Math.max(...visible.map(c => c.high));
+  const pad = (hi - lo) * 0.08 || 1;
+  const yMin = lo - pad, yMax = hi + pad;
+
+  const marginL = 8, marginR = 8, marginT = 10, marginB = 10;
+  const plotW = w - marginL - marginR;
+  const plotH = h - marginT - marginB;
+  const n = visible.length;
+  const candleW = plotW / n;
+
+  const yToPx = (y) => marginT + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+
+  // grid lines
+  ctx.strokeStyle = '#1A2233';
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 4; i++) {
+    const y = marginT + (plotH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+  }
+
+  visible.forEach((c, i) => {
+    const cx = marginL + i * candleW + candleW / 2;
+    const up = c.close >= c.open;
+    ctx.strokeStyle = ctx.fillStyle = up ? '#00D9A3' : '#FF5C7A';
+
+    ctx.beginPath();
+    ctx.moveTo(cx, yToPx(c.high));
+    ctx.lineTo(cx, yToPx(c.low));
+    ctx.lineWidth = Math.max(1, candleW * 0.08);
+    ctx.stroke();
+
+    const bodyTop = yToPx(Math.max(c.open, c.close));
+    const bodyBot = yToPx(Math.min(c.open, c.close));
+    const bw = Math.max(2, candleW * 0.62);
+    ctx.fillRect(cx - bw / 2, bodyTop, bw, Math.max(1, bodyBot - bodyTop));
+  });
+
+  // "prediction point" marker line where user made the call
+  if (session.markerIndex !== undefined) {
+    const mx = marginL + session.markerIndex * candleW;
+    ctx.strokeStyle = '#F5C542';
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(mx, marginT); ctx.lineTo(mx, h - marginB); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+function predict(direction) {
+  session.prediction = direction;
+  session.markerIndex = session.visibleCount;
+  document.getElementById('predictRow').style.display = 'none';
+  document.getElementById('revealRow').style.display = 'flex';
+}
+
+function reveal() {
+  const startIdx = session.visibleCount - 1;
+  const startPrice = session.series[startIdx].close;
+  session.visibleCount = session.revealTarget;
+  const endPrice = session.series[session.visibleCount - 1].close;
+  const pctMove = (endPrice - startPrice) / startPrice;
+
+  let correct = false;
+  if (session.prediction === 'LONG') correct = pctMove > 0.001;
+  else if (session.prediction === 'SHORT') correct = pctMove < -0.001;
+  else if (session.prediction === 'WAIT') correct = Math.abs(pctMove) <= 0.004;
+
+  const rr = Math.abs(pctMove) > 0 ? Math.round((Math.abs(pctMove) / 0.006) * 100) / 100 : 0;
+
+  const stats = ReplayX.recordRound(correct, rr);
+
+  document.getElementById('revealRow').style.display = 'none';
+  document.getElementById('nextRow').style.display = 'flex';
+  const banner = document.getElementById('resultBanner');
+  banner.className = 'result-banner show ' + (correct ? 'correct' : 'wrong');
+  const movePct = (pctMove * 100).toFixed(2);
+  banner.textContent = correct
+    ? `Correct — price moved ${movePct > 0 ? '+' : ''}${movePct}% after your call.`
+    : `Missed it — price moved ${movePct > 0 ? '+' : ''}${movePct}%, opposite your call.`;
+
+  updateRoundBadge();
+  render();
+  refreshStatsPanel();
+}
+
+function refreshStatsPanel() {
+  const s = ReplayX.loadState().stats;
+  document.getElementById('streakNum').textContent = s.streak;
+  document.getElementById('statRounds').textContent = s.rounds;
+  document.getElementById('statBest').textContent = s.bestStreak;
+  document.getElementById('statWinRate').textContent = s.rounds ? Math.round((s.correct / s.rounds) * 100) + '%' : '—';
+  const rrVals = s.history.filter(h => h.rr).map(h => h.rr);
+  document.getElementById('statRR').textContent = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length).toFixed(2) : '—';
+}
+
+function renderLockPanel() {
+  const el = document.getElementById('lockPanel');
+  if (state.plan === 'pro') {
+    el.innerHTML = `<strong style="color:var(--gold)">Pro plan active.</strong><br>Unlimited replays, all markets, and full analytics unlocked.`;
+  } else {
+    const s = ReplayX.loadState().stats;
+    const remaining = Math.max(0, 5 - (s.rounds % 5 === 0 && s.rounds > 0 ? 5 : s.rounds % 5));
+    el.innerHTML = `Free plan: 3 markets, limited daily challenges.<br><a href="pricing.html">Upgrade to Pro →</a> for unlimited replay and full stats.`;
+  }
+}
+
+// share modal
+function openShare() {
+  const s = ReplayX.loadState().stats;
+  const rrVals = s.history.filter(h => h.rr).map(h => h.rr);
+  const avgRR = rrVals.length ? (rrVals.reduce((a,b)=>a+b,0)/rrVals.length).toFixed(2) : '0';
+  const winRate = s.rounds ? Math.round((s.correct / s.rounds) * 100) : 0;
+
+  document.getElementById('shareHeadline').textContent = `${winRate}% accuracy`;
+  document.getElementById('shareSub').textContent = `over ${s.rounds} rounds on ${session.asset.name}`;
+  document.getElementById('shareStreak').textContent = s.bestStreak;
+  document.getElementById('shareRR').textContent = avgRR;
+  document.getElementById('shareRounds').textContent = s.rounds;
+  document.getElementById('shareModalOverlay').classList.add('show');
+}
+
+function downloadShareImage() {
+  const node = document.getElementById('shareCard');
+  const w = node.offsetWidth, h = node.offsetHeight;
+  const svgData = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+      <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="width:${w}px;height:${h}px;">
+          ${node.outerHTML}
+        </div>
+      </foreignObject>
+    </svg>`;
+  const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  img.onload = () => {
+    const canvasOut = document.createElement('canvas');
+    canvasOut.width = w * 2; canvasOut.height = h * 2;
+    const c2 = canvasOut.getContext('2d');
+    c2.scale(2,2);
+    c2.fillStyle = '#0A0E14';
+    c2.fillRect(0,0,w,h);
+    c2.drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.download = 'replayx-result.png';
+    a.href = canvasOut.toDataURL('image/png');
+    a.click();
+  };
+  img.src = url;
+}
+
+// wire up events
+document.getElementById('btnLong').onclick = () => predict('LONG');
+document.getElementById('btnShort').onclick = () => predict('SHORT');
+document.getElementById('btnWait').onclick = () => predict('WAIT');
+document.getElementById('btnReveal').onclick = reveal;
+document.getElementById('btnNext').onclick = () => newSession(document.getElementById('assetPicker').value, session.roundNum + 1);
+document.getElementById('btnShare').onclick = openShare;
+document.getElementById('btnCloseShare').onclick = () => document.getElementById('shareModalOverlay').classList.remove('show');
+document.getElementById('btnDownloadShare').onclick = downloadShareImage;
+document.getElementById('assetPicker').onchange = (e) => newSession(e.target.value, 1);
+
+populateAssetPicker();
+fitCanvas();
+newSession(state.settings.defaultAsset || 'BTC', 1);
+refreshStatsPanel();
+renderLockPanel();
+</script>
+</body>
+</html>
